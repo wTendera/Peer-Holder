@@ -1,6 +1,6 @@
 
 const express = require('express')
-
+const request = require('superagent')
 const app = express()
 const bodyParser = require('body-parser');
 
@@ -16,8 +16,14 @@ app.get('/peers', function (req, res) {
 
 app.post('/register', function (req, res) {
 
-    console.log("New user connected:", req.connection.remoteAddress, ':', req.body.port, "currently registered: ", peers.length)
-    peers.push(`${req.connection.remoteAddress}:${req.body.port}`)
+    let remoteAddress = req.connection.remoteAddress.split(":")[3]
+    peers.push(`${remoteAddress}:${req.body.port}`)
+    console.log(`New user connected: ${remoteAddress}:${req.body.port}, currently registered: ${peers.length}`)
+
+    peers.forEach(peer => {
+        request.post(`${peer}/peers`).send(peers)
+            .then(res => {}, err => console.log("Peer inactive, clean might be needed:", err))
+    })
 
     res.sendStatus(200)
 })
